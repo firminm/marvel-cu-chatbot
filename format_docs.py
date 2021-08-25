@@ -1,9 +1,11 @@
-import discord
+from discord import Embed
 
 """
-    Used by main.py
-    Handles supplemental functions for main.py, mostly formats documents returned from db_manager so they are visually appealing to end-user
+    Used by user commands in main.py
+      - Formats raw documents from database to be sent to end-user
+      - Error checks documents
 """
+
 
 COLOR = 0x893a94            # global holding embed color
 
@@ -16,14 +18,14 @@ def constr_quote(quote_doc):
         name = quote_doc['name']
     
 
-    embed_var = discord.Embed(title=name, description=quote_doc['quote'], color = COLOR)
+    embed_var = Embed(title=name, description=quote_doc['quote'], color = COLOR)
 
 
     source = '['+quote_doc['sourceTitle']+']('+quote_doc['source']+')'
-    embed_var.add_field(name='Context', value=quote_doc['name']+ ' ' +quote_doc['context'] + '\n(' + source + ')')
+    embed_var.add_field(name='Context', value=quote_doc['name']+ ' ' +quote_doc['context'] + '\n' + source)
 
-    if quote_doc['characterPage'] is not None:
-        embed_var.add_field(name='Character Page', value='['+quote_doc['name']+' ]('+quote_doc['characterPage']+')', inline=True)
+    if quote_doc['charPage'] is not None:
+        embed_var.add_field(name='Character Page', value='['+quote_doc['name']+' ]('+quote_doc['charPage']+')', inline=True)
     
 
     if quote_doc['thumbnail'] is not None:
@@ -38,7 +40,7 @@ def constr_about(doc):
         name = doc['name'] + ' (' + doc['realName'] + ')'
     else:
         name = doc['name']
-    embed_var = discord.Embed(title=name, description='\u2008')     # TODO: replace description with about once DB has that
+    embed_var = Embed(title=name, description='\u2008', color=COLOR)     # TODO: replace description with about once DB has that
 
     if doc['species'] is not None and doc['citizenship'] is not None:
         embed_var.add_field(name='Species/Citizenship', value=doc['species']+'/'+doc['citizenship'], inline=False)
@@ -68,3 +70,43 @@ def constr_about(doc):
     
     embed_var.add_field(name=str(doc['references']) + ' Quotes', value=str(doc['percent']) + ' \u0025 of all quotes stored', inline=False)
     return embed_var
+
+
+''' 
+    Creates embed for no-args help cmd 
+    Parameters: 
+      - h_dict = dictionary containing list of commands and category
+      - prefix = server prefix (used to set footer)
+'''
+def constr_help_list(h_dict, prefix):
+    desc = "I'm a bot that generates quotes from the Marvel Cinematic Universe\nType `{0}help <command>` for more information about that command".format(prefix)
+    embed_var = Embed(title='MCU Quotes Bot', description=desc, color=COLOR)
+    for group in h_dict:    # iterate through keys of dict, recall values are an array
+        if len(h_dict[group]) == 1:
+            val = '`' + h_dict[group][0] + '`'
+        elif len(h_dict[group]) == 0:
+            continue
+        else:
+            val = '`, `'.join(h_dict[group])
+        embed_var.add_field(name=group, value=val, inline=False)
+
+    # embed_var.set_footer(text='Prefix: {0}'.format(prefix))
+    return embed_var
+
+
+''' 
+    Creates embed for help <command> call 
+    Takes doc as retreived from database (dict)
+'''
+def constr_help_page(doc, prefix):
+    if doc is None:
+        return None
+    
+    embed_var = Embed(title=doc['command'], description=doc['details'], color=COLOR)
+    embed_var.add_field(name='Use', value='`' + prefix + doc['use'], inline=False)
+    embed_var.add_field(name='Group', value=doc['group'], inline=True)
+
+    examples = '`' + '\n`'.join(doc['examples'])
+    embed_var.add_field(name='Examples', value=examples, inline=False)
+    return embed_var
+    

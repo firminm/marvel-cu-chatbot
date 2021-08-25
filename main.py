@@ -9,59 +9,55 @@ from dotenv import load_dotenv
       - Add ability to toggle spoiler info in "about" command (death & status)
       - Add birthday command [finds next/current birthday, or takes argument to find birthdays on that day]
 """
+prefixes = {}   # Dictionary that stores server prefixes, default prefix stored at key [0]
 
 load_dotenv()
 TOKEN = os.getenv('TOKEN')
 # client = discord.Client() # old way
 
 def get_prefix(bot, message):
-    with open('prefixes.json', 'r') as f:
-        prefixes = json.load(f)
-    return prefixes[str(message.guild.id)]
+    return prefixes[message.guild.id]
+    # with open('prefixes.json', 'r') as f:
+        # prefixes = json.load(f)
+    # return prefixes[str(message.guild.id)]
 
 bot = commands.Bot(command_prefix=(get_prefix))
+bot.remove_command('help')  # Deletes default help command so I can "override" and make my own
 
 
 @bot.event
 async def on_guild_join(guild):
     print('Joined guild ', guild.name)
-    with open('prefixes.json', 'r') as f:
-        prefixes = json.load(f)             #load the json file
-    prefixes[str(guild.id)] = '$'           #default prefix
-    
-    with open('prefixes.json', 'w') as f:   #write in the prefix.json "message.guild.id": "$"
-        json.dump(prefixes, f, indent=4)    #the indent is to make everything look a bit neater
+    prefixes[guild.id] = prefixes[0]    # Set to default prefix
+
 
 @bot.event
 async def on_guild_remove(guild): #when the bot is removed from the guild
-    with open('prefixes.json', 'r') as f: #read the file
-        prefixes = json.load(f)
-    prefixes.pop(str(guild.id)) #find the guild.id that bot was removed from
+    print('Removed from guild {0}, ID = {1}'.format(guild.name, guild.id))
+    del prefixes[guild.id]
+    db_manager.remove_guild(guild.id)
 
-    with open('prefixes.json', 'w') as f: #deletes the guild.id as well as its prefix
-        json.dump(prefixes, f, indent=4)
 
 @bot.event
 async def on_ready():
+    global prefixes
+    prefixes = db_manager.establish_prefixes()
     print('Logged in as {0.user}'.format(bot))
+
+
+
+"""  --------------------   Begin User Commands Tracking   --------------------  """
 
 
 @bot.command(pass_context=True)
 @has_permissions(administrator=True)        #ensure that only administrators can use this command
 async def changeprefix(ctx, prefix):        #command: $changeprefix ...
-    with open('prefixes.json', 'r') as f:
-        prefixes = json.load(f)
+    db_manager.change_prefix(ctx.guild.id, prefix)
 
-    prefixes[str(ctx.guild.id)] = prefix
+    prefixes[ctx.guild.id] = prefix
+    await ctx.send(f'Prefix changed to: {prefix}')  # Confirms the prefix it's been changed to
+    name=f'{prefix}MCU Quotes'                      # Changes nickname to have prefix
 
-    with open('prefixes.json', 'w') as f:   #writes the new prefix into the .json
-        json.dump(prefixes, f, indent=4)
-
-    await ctx.send(f'Prefix changed to: {prefix}')  #confirms the prefix it's been changed to
-    name=f'{prefix}MCU Quotes'              #changes nickname to have prefix in it
-
-
-""" -------------------- Begin Custom commands Tracking -------------------- """
 
 ''' Gets random quote from DB or specific character '''
 @bot.command(pass_context=True)
@@ -103,9 +99,18 @@ async def about(ctx, *args):
 @bot.command(pass_context=True)
 async def help(ctx, *args):
     if len(args) == 0:  # Send list of commands
-        pass
+        help_doc = db_manager.get_help_dict()
+        help_embed = format_docs.constr_help_list(help_doc, prefixes[ctx.guild.id])
     else:               # Send information about command
-        pass
+        help_doc = db_manager.get_help_page(args[0])
+        help_embed = format_docs.constr_help_page(help_doc, prefixes[ctx.guild.id])
+    
+    if help_embed is not None:
+        await ctx.channel.send(embed=help_embed)
+    elif len(args) > 0:
+        await ctx.channel.send('Character {0} not found'.format(args[1]))
+    else:
+        await ctx.channel.send('An Error has occurred')
 
 
 ''' Adds movie/tv show to list of media to pull quotes from '''
@@ -119,6 +124,15 @@ async def add(ctx, *args):
 async def remove(ctx, *args):
     pass
 
+
+'''
+    Lists characters
+    No-args: sends full list of characters with a reaction for next
+    Args: sends the list of characters that '^args'
+'''
+@bot.command(pass_context=True)
+async def characters(ctx, *args):
+    pass
 
 ''' 
     Check or change whether death/status is shown on about page
