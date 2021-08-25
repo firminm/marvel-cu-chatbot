@@ -1,14 +1,27 @@
+from discord.ext.commands.help import HelpCommand
 import pymongo, os
 from dotenv import load_dotenv
 from bson.son import SON
 
-load_dotenv()
+"""
+    Handles all calls to the mcuQuotes database
+    used by main.py and guild_handling.py
+
+"""
+
+
+load_dotenv() 
 DB_CLIENT   = os.getenv('DB_CLIENT')
 db_client   = pymongo.MongoClient(DB_CLIENT)
-DB          = db_client['marvelQuotes']
-GUILDS      = DB['mcu_guilds']
-QUOTES      = DB['all_mcu_quotes']
-CHARS       = DB['mcu_characters']
+DB          = db_client['mcuQuotes']
+GUILDS      = DB['guilds']
+QUOTES      = DB['quotes']
+CHARS       = DB['characters']
+HELP        = DB['command-info']
+
+
+
+"""  --------------------   Functions used by main.py   --------------------  """
 
 
 def get_quote(guild, args=None):
@@ -31,6 +44,8 @@ def get_quote(guild, args=None):
 
 
 '''
+    Retrieves document containing information about a character
+
     TODO: add about bot (no args call)
         - Potentially add a more efficient search method using regex substring functionality
         - Ability to exclude spoiler info
@@ -46,3 +61,63 @@ def get_about(guild, args):
         doc = CHARS.find_one({'$or': [{'name': {'$regex': args, '$options': 'i'}}, {'realName': {'$regex': args, '$options': 'i'}}]})
     
     return doc
+
+
+'''
+    Called by no args help command in main.py
+    Returns list of commands
+'''
+def get_help_dict():
+    help_dict = {       # Alternative to dictionary is a help obj, but I feel like it works well enough without OOP
+        'Quotes': [], 
+        'Info': [],
+        'Setup': []
+    }  
+    cursor = HELP.find()
+    for item in cursor:
+        help_dict[item['group']].append(item['command'])
+
+    return help_dict
+
+
+'''
+    Called by help command with argument in main.py
+    Returns the document (dict)
+'''
+def get_help_page(cmd):
+    try:
+        doc = HELP.find_one({'command': {'$regex': cmd, '$options': 'i'}})
+        return doc
+    except KeyError:
+        return None
+
+
+
+"""  --------------------   Functions Relating to Guilds   --------------------  """
+
+'''
+    Called on startup by guild_handling.py's establish_dicts()
+    Returns a tupple containing prefixes in [0] and permissions in [1]
+'''
+def establish_guild_info():
+    prefixes    = {}
+    permissions = {}
+    guilds = GUILDS.find()
+    for guild in guilds:
+        prefixes[guild['_id']]    = guild['prefix']
+        permissions[guild['_id']] = guild['perms']
+    return (prefixes, permissions)
+
+
+def establish_prefixes():
+    prefixes = {}
+    guilds = GUILDS.find()
+    for guild in guilds:
+        prefixes[guild['_id']]  = guild['prefix']
+
+    return prefixes
+
+
+''' Changes a guild's prefix '''
+def change_prefix(guild_id, prefix):
+    GUILDS.update_one({'_id': guild_id}, {'$set': {'prefix': prefix}})
