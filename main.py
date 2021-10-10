@@ -43,6 +43,8 @@ async def on_ready():
     global prefixes
     prefixes = db_manager.establish_prefixes()
     print('Logged in as {0.user}'.format(bot))
+    
+    db_manager.command_line()
 
 
 
@@ -70,7 +72,7 @@ async def quote(ctx, *args):  # *args is a list of arguments from user
         quote_doc   = db_manager.get_quote(ctx.guild, arg)
 
     if quote_doc is None:
-        await ctx.channel.send('Could not find character', arg)
+        await ctx.channel.send('Could not find character' + ' \"'+arg+'\"')
     else:
         quote_embed = format_docs.constr_quote(quote_doc)
         await ctx.channel.send(embed=quote_embed)

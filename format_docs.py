@@ -12,8 +12,11 @@ COLOR = 0x893a94            # global holding embed color
 
 
 def constr_quote(quote_doc):
-    if quote_doc['name'] != quote_doc['realName']:  # TODO: replace this with <if !sameName> once DB has been formatted properly
+    # if quote_doc['name'] != quote_doc['realName']:  # : replace this with <if !sameName> once DB has been formatted properly
+    if quote_doc["sameName"] == False:
         name = quote_doc['name'] + ' (' + quote_doc['realName'] + ')'
+    elif quote_doc["suffix"] is not None:
+        name = quote_doc['name'] + ' (' + quote_doc['suffix'] + ')'
     else:
         name = quote_doc['name']
     
@@ -21,11 +24,13 @@ def constr_quote(quote_doc):
     embed_var = Embed(title=name, description=quote_doc['quote'], color = COLOR)
 
 
-    source = '['+quote_doc['sourceTitle']+']('+quote_doc['source']+')'
-    embed_var.add_field(name='Context', value=quote_doc['name']+ ' ' +quote_doc['context'] + '\n' + source)
+    source = '['+quote_doc['sourceTitle']+']('+quote_doc['source']+')'      # guaranteed to exist
+    if quote_doc['context'] is not None:
+        source = quote_doc['name'] +' '+ quote_doc['context'] + '\n' + source    # Adds context (i.e. "Iron Man to Spider-Man") before linking source
+    embed_var.add_field(name='Source', value=source) 
 
     if quote_doc['charPage'] is not None:
-        embed_var.add_field(name='Character Page', value='['+quote_doc['name']+' ]('+quote_doc['charPage']+')', inline=True)
+        embed_var.add_field(name='Character Page', value='['+quote_doc['name']+']('+quote_doc['charPage']+')', inline=True)
     
 
     if quote_doc['thumbnail'] is not None:

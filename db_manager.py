@@ -22,7 +22,15 @@ HELP        = DB['command-info']
 
 
 """  --------------------   Functions used by main.py   --------------------  """
-
+''' Used for quick db modifying'''
+def command_line():
+    QUOTES.update_many({'suffix': {'$exists': False}}, {'$set': {'suffix': None}})
+    # cursor = QUOTES.find({'charPage': {'$regex': ' '}})
+    # for doc in cursor:
+    #     s = doc['charPage'].replace(' ', '_')
+    #     QUOTES.update_one({'_id': doc['_id']}, {'$set': {'charPage': s}})
+    #     print(doc['charPage'])
+    # QUOTES.update_many({'name':'Phil Coulson', 'suffix': 'Chronicom LMD'}, {'$set': {'charPage': 'https://marvelcinematicuniverse.fandom.com/wiki/Phil_Coulson/Chronicom_LMD'}})
 
 def get_quote(guild, args=None):
     if args is None:
