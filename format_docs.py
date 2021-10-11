@@ -1,4 +1,5 @@
 from discord import Embed
+from datetime import datetime
 
 """
     Used by user commands in main.py
@@ -62,18 +63,18 @@ def constr_about(doc):
     #     embed_var.add_field(name='Lived', value=doc['death'])
     if doc['birthday'] is not None:
         embed_var.add_field(name='Birthday', value=doc['birthday'], inline=True)
-    if doc['death'] is not None:
-        if doc['deathInfo'] is not None:
-            embed_var.add_field(name='Death', value=doc['death'] + '\n' + doc['deathInfo'] , inline=True)
-        else:
-            embed_var.add_field(name='Death', value=doc['death'], inline=True)
-    if doc['status'] is not None:
+    # if doc['death'] is not None:  As of now this field is always none
+        # if doc['deathInfo'] is not None:
+            # embed_var.add_field(name='Death', value=doc['death'] + '\n' + doc['deathInfo'] , inline=True)
+        # else:
+            # embed_var.add_field(name='Death', value=doc['death'], inline=True)
+    if doc['status'] is not None:   # Set to None when deaths are set to off
         embed_var.add_field(name='Status', value=doc['status'], inline=True)
 
     if doc['thumbnail'] is not None:
         embed_var.set_thumbnail(url=doc['thumbnail'])
     
-    embed_var.add_field(name=str(doc['references']) + ' Quotes', value=str(doc['percent']) + ' \u0025 of all quotes stored', inline=False)
+    embed_var.add_field(name=str(doc['references']) + ' Quotes', value=str(doc['percent']) + ' \u0025 of all quotes\n\n[Wiki]('+doc['charPage']+')', inline=False)
     return embed_var
 
 
@@ -115,3 +116,33 @@ def constr_help_page(doc, prefix):
     embed_var.add_field(name='Examples', value=examples, inline=False)
     return embed_var
     
+
+''' 
+    Constructs page of today's birthdays
+    Input: list of character docs +(optnl) month being checked
+'''
+def constr_bday_page(bdays, month=None):
+    x = datetime.now()
+    # date_as_words = x.strftime("%B") + ' ' + str(x.day)+ ", " + str(x.year)
+    if month is None:   # if checking today's date
+        date_of  = str(x.month) + '/' + str(x.day)
+        heading = "Today's Birthdays ({0})".format(date_of)
+    else:               # if checking a specific date
+        date_of  = month 
+        heading = month[0].upper() + month[1:].lower() +' Birthdays'
+    
+    if bdays is None:
+        return Embed(title="No {0} Birthdays".format(date_of), description='\u2008', color=COLOR)
+
+    embed_var = Embed(title=heading, description='\u2008', color=COLOR)
+    embed_var.set_footer(text=str(len(bdays)) + ' Total')
+
+    for doc in bdays:
+        if doc['sameName']:
+            name_val = doc['name']
+        else:
+            name_val = doc['name']+' ('+doc['realName']+')'
+        
+        embed_var.add_field(name=name_val, value=doc['birthday'])
+    
+    return embed_var

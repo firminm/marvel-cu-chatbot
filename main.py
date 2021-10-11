@@ -27,8 +27,10 @@ bot.remove_command('help')  # Deletes default help command so I can "override" a
 
 @bot.event
 async def on_guild_join(guild):
-    print('Joined guild ', guild.name)
     prefixes[guild.id] = prefixes[0]    # Set to default prefix
+    db_manager.add_guild(guild)
+    print('Joined guild ', guild.name)
+
 
 
 @bot.event
@@ -54,7 +56,7 @@ async def on_ready():
 @bot.command(pass_context=True)
 @has_permissions(administrator=True)        #ensure that only administrators can use this command
 async def changeprefix(ctx, prefix):        #command: $changeprefix ...
-    db_manager.change_prefix(ctx.guild.id, prefix)
+    db_manager.change_prefix(ctx.guild, prefix)
 
     prefixes[ctx.guild.id] = prefix
     await ctx.send(f'Prefix changed to: {prefix}')  # Confirms the prefix it's been changed to
@@ -78,6 +80,7 @@ async def quote(ctx, *args):  # *args is a list of arguments from user
         await ctx.channel.send(embed=quote_embed)
 
 
+''' Provides information about a specified chharacter '''
 @bot.command(pass_context=True)
 async def about(ctx, *args):
     if len(args) == 0:  # Send information about the bot
@@ -115,6 +118,26 @@ async def help(ctx, *args):
         await ctx.channel.send('An Error has occurred')
 
 
+''' 
+    Displays Known Birthdays across MCU 
+    Takes month as args
+    Input:
+      noArgs - displays today's birthday
+      args  - displays that month's birthday
+'''
+@bot.command(pass_context=True)
+async def bday(ctx, *args):
+    if len(args) == 0:  # No args -> return today's bdays
+        bdays = db_manager.get_today_bday()
+        bday_embed = format_docs.constr_bday_page(bdays)    # No-bday-today error checking done in method
+    else:
+        month_as_str = ' '.join(args)
+        bdays = db_manager.get_bday(month_as_str)
+        bday_embed = format_docs.constr_bday_page(bdays, month_as_str)
+
+    await ctx.channel.send(embed=bday_embed)
+
+
 ''' Adds movie/tv show to list of media to pull quotes from '''
 @bot.command(pass_context=True)
 async def add(ctx, *args):
@@ -144,11 +167,19 @@ async def characters(ctx, *args):
 @bot.command(pass_context=True)
 async def deaths(ctx, *args):
     if len(args) == 0:  # return status of whether spoilers are on or not
-        pass
-    elif args[1].lower() == 'on':
-        pass
-    elif args[1].lower() == 'off':
-        pass
+        status = db_manager.get_deaths_status(ctx.guild)
+        if status:
+            await ctx.message.send('Character alive/dead status is currently being shown')
+        else:
+            await ctx.message.send('Character alive/dead status is **not** currently being shown')
+    elif args[0].lower() == 'on':
+        db_manager.set_deaths(ctx.guild, True)
+        await ctx.channel.send('Death status enabled')
+
+    elif args[0].lower() == 'off':
+        db_manager.set_deaths(ctx.guild, False)
+        await ctx.channel.send('Death status disabled')
+
     else:
         await ctx.channel.send('Invalid argument. Use `on` or `off`, or call without argument')
 
@@ -164,7 +195,7 @@ async def repeat(ctx, *args):
         pass
     elif args[1].lower() == 'on':
         pass
-    elif args[1].lower() == 'on':
+    elif args[1].lower() == 'off':
         pass
     else:
         await ctx.channel.send('Invalid argument. Use `on` or `off`, or call without argument')
