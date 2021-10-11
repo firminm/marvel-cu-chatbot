@@ -210,3 +210,7 @@ def add_guild(guild):
         "prefix": default['prefix'],
         "used_quotes": []
         })
+
+
+def remove_guild(guild):
+    GUILDS.delete_one({'_id': guild.id})

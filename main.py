@@ -34,9 +34,10 @@ async def on_guild_join(guild):
 
 @bot.event
 async def on_guild_remove(guild): #when the bot is removed from the guild
-    print('Removed from guild {0}, ID = {1}'.format(guild.name, guild.id))
     del prefixes[guild.id]
     db_manager.remove_guild(guild.id)
+    print('Removed from guild {0}, ID = {1}'.format(guild.name, guild.id))
+
 
 
 @bot.event
