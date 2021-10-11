@@ -93,7 +93,7 @@ def constr_help_list(h_dict, prefix):
         elif len(h_dict[group]) == 0:
             continue
         else:
-            val = '`, `'.join(h_dict[group])
+            val = '`' + '`, `'.join(h_dict[group]) + '`'
         embed_var.add_field(name=group, value=val, inline=False)
 
     # embed_var.set_footer(text='Prefix: {0}'.format(prefix))
