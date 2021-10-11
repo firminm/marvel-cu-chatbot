@@ -104,7 +104,6 @@ def get_help_dict():
         'Quotes': [], 
         'Info': [],
         'Setup': [],
-        'Misc': []
     }  
     cursor = HELP.find()
     for item in cursor:

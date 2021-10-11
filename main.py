@@ -1,4 +1,6 @@
 import discord, os, json, db_manager, format_docs
+
+from discord.ext.commands.errors import MissingPermissions
 from discord.ext import commands
 from discord.ext.commands.core import has_permissions
 from dotenv import load_dotenv
@@ -17,9 +19,6 @@ TOKEN = os.getenv('TOKEN')
 
 def get_prefix(bot, message):
     return prefixes[message.guild.id]
-    # with open('prefixes.json', 'r') as f:
-        # prefixes = json.load(f)
-    # return prefixes[str(message.guild.id)]
 
 bot = commands.Bot(command_prefix=(get_prefix))
 bot.remove_command('help')  # Deletes default help command so I can "override" and make my own
@@ -55,7 +54,7 @@ async def on_ready():
 
 @bot.command(pass_context=True)
 @has_permissions(administrator=True)        #ensure that only administrators can use this command
-async def changeprefix(ctx, prefix):        #command: $changeprefix ...
+async def prefix(ctx, prefix):        #command: $prefix ...
     db_manager.change_prefix(ctx.guild, prefix)
 
     prefixes[ctx.guild.id] = prefix
@@ -164,14 +163,16 @@ async def characters(ctx, *args):
     Off by default
     TODO: Lock behind permissions
 '''
-@bot.command(pass_context=True)
-async def deaths(ctx, *args):
+@bot.command(name="deaths", pass_context=True)
+@has_permissions(manage_roles=True)
+async def _deaths(ctx, *args):
     if len(args) == 0:  # return status of whether spoilers are on or not
         status = db_manager.get_deaths_status(ctx.guild)
         if status:
-            await ctx.message.send('Character alive/dead status is currently being shown')
+            await ctx.channel.send(embed=discord.Embed( title="deaths", description="**on**", color=0x2ecc71))
         else:
-            await ctx.message.send('Character alive/dead status is **not** currently being shown')
+            await ctx.channel.send(embed=discord.Embed( title="deaths", description="**off**", color=0xe74c3c))
+            # await ctx.channel.send('`deaths` is currently set to **off**')
     elif args[0].lower() == 'on':
         db_manager.set_deaths(ctx.guild, True)
         await ctx.channel.send('Death status enabled')
@@ -183,6 +184,23 @@ async def deaths(ctx, *args):
     else:
         await ctx.channel.send('Invalid argument. Use `on` or `off`, or call without argument')
 
+'''
+    Error for deaths command, sends status of deaths
+'''
+@_deaths.error
+async def kick_ereror(ctx, error):
+    if isinstance(error, MissingPermissions):
+        txt = "❌You do not have permission to use this command.\n`{0}deaths` is currenty set to ".format(prefixes[ctx.guild.id])
+        
+        status = db_manager.get_deaths_status(ctx.guild)
+        if status:  # Rather than displaying a boolean
+            txt += '**on**'
+        else:
+            txt += '**off**'
+            
+        await ctx.channe.send(text=txt)
+    else:
+        print('_kick: ', error)
 
 ''' 
     Enables/Disables repeated quotes 

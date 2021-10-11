@@ -109,11 +109,13 @@ def constr_help_page(doc, prefix):
         return None
     
     embed_var = Embed(title=doc['command'], description=doc['details'], color=COLOR)
-    embed_var.add_field(name='Use', value='`' + prefix + doc['use'], inline=False)
-    embed_var.add_field(name='Group', value=doc['group'], inline=True)
 
     examples = '`' + '\n`'.join(doc['examples'])
     embed_var.add_field(name='Examples', value=examples, inline=False)
+
+    embed_var.add_field(name='Use', value='`' + prefix + doc['use'], inline=True)
+    embed_var.add_field(name='Group', value=doc['group'], inline=True)
+
     return embed_var
     
 
