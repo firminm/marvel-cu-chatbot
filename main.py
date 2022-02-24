@@ -18,7 +18,11 @@ TOKEN = os.getenv('TOKEN')
 # client = discord.Client() # old way
 
 def get_prefix(bot, message):
+    # try:
     return prefixes[message.guild.id]
+    # except AttributeError:
+    #     print('Startup Error')
+    #     return prefixes[0]
 
 bot = commands.Bot(command_prefix=(get_prefix))
 bot.remove_command('help')  # Deletes default help command so I can "override" and make my own
@@ -35,7 +39,7 @@ async def on_guild_join(guild):
 @bot.event
 async def on_guild_remove(guild): #when the bot is removed from the guild
     del prefixes[guild.id]
-    db_manager.remove_guild(guild.id)
+    db_manager.remove_guild(guild)
     print('Removed from guild {0}, ID = {1}'.format(guild.name, guild.id))
 
 
@@ -44,9 +48,12 @@ async def on_guild_remove(guild): #when the bot is removed from the guild
 async def on_ready():
     global prefixes
     prefixes = db_manager.establish_prefixes()
+
+    # db_manager.command_line()
+
+    
     print('Logged in as {0.user}'.format(bot))
     
-    db_manager.command_line()
 
 
 
@@ -66,6 +73,8 @@ async def prefix(ctx, prefix):        #command: $prefix ...
 ''' Gets random quote from DB or specific character '''
 @bot.command(pass_context=True)
 async def quote(ctx, *args):  # *args is a list of arguments from user
+    print('{0}:  {1}quote '.format(ctx.guild.id, prefixes[ctx.guild.id]) + ' '.join(args))
+
     if len(args) == 0:
         quote_doc = db_manager.get_quote(ctx.guild)
     else:
@@ -127,13 +136,18 @@ async def help(ctx, *args):
 '''
 @bot.command(pass_context=True)
 async def bday(ctx, *args):
+    print('{0}:  {1}bday '.format(ctx.guild.id, prefixes[ctx.guild.id]) + ' '.join(args))
+    
     if len(args) == 0:  # No args -> return today's bdays
         bdays = db_manager.get_today_bday()
         bday_embed = format_docs.constr_bday_page(bdays)    # No-bday-today error checking done in method
     else:
-        month_as_str = ' '.join(args)
-        bdays = db_manager.get_bday(month_as_str)
-        bday_embed = format_docs.constr_bday_page(bdays, month_as_str)
+        try:
+            month_as_str = ' '.join(args)
+            bdays = db_manager.get_bday(month_as_str)
+            bday_embed = format_docs.constr_bday_page(bdays, month_as_str)
+        except ValueError:
+            await ctx.channel.send(text='An error occurred. Make sure that the day is formatted as **only a number**.\nExample: `{0}bday October 14th` will cause an error, instead use {0}bday October 14`'.format(prefixes[ctx.guild.id]))
 
     await ctx.channel.send(embed=bday_embed)
 
@@ -199,7 +213,7 @@ async def kick_ereror(ctx, error):
         else:
             txt += '**off**'
             
-        await ctx.channe.send(text=txt)
+        await ctx.channel.send(text=txt)
     else:
         print('_kick: ', error)
 

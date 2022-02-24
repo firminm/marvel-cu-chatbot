@@ -25,13 +25,16 @@ HELP        = DB['command-info']
 """  --------------------   Functions used by main.py   --------------------  """
 ''' Used for quick db modifying'''
 def command_line():
+    
+    QUOTES.update_many({'realName': None, 'sameName': False}, {'$set': {'sameName': True}})
+
     # QUOTES.update_many({'suffix': {'$exists': False}}, {'$set': {'suffix': None}})
     # QUOTES.update_many({'name': {'$regex': "/\Ravager T'Challa"}}, {'$set': {'suffix': "W/I? Ravager T'Challa"}})
-    cursor = CHARS.find({'birthday': {'$regex': ']$'}})
-    for doc in cursor:
-        temp = doc['birthday'][:-3]
-        # print(temp)
-        CHARS.update_one({'_id': doc['_id']}, {'$set': {'birthday': temp}})
+    # cursor = CHARS.find({'birthday': {'$regex': ']$'}})
+    # for doc in cursor:
+    #     temp = doc['birthday'][:-3]
+    #     # print(temp)
+    #     CHARS.update_one({'_id': doc['_id']}, {'$set': {'birthday': temp}})
 
 
     
@@ -210,7 +213,11 @@ def add_guild(guild):
         "prefix": default['prefix'],
         "used_quotes": []
         })
+    GUILDS.update_one({'_id': 0}, {'$inc': {'servers': 1, 'members': guild.member_count}})
 
 
 def remove_guild(guild):
+    negated = GUILDS.find_one({'_id': guild.id})['members']
+    GUILDS.update_one({'_id': 0}, {'$inc': {'members': -negated, 'servers': -1}})
+
     GUILDS.delete_one({'_id': guild.id})
