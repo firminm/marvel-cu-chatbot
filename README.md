@@ -1,5 +1,5 @@
-(WIP)
-This is a rewrite of github repo marvel-chatbot using the latest of discord py conventions.
-The function of this bot is similar, sharing the same commands; however, it has adjustable prefixes, more efficient and readable command checks, and works from a separate database focused solely on quotes from the Marvel Cinematic Universe (instead of all comic book universes).
+Chatbot for popular community-based instant messaging and VoIP application, Discord.
+Bot draws from a database of > 5,000 quotes sourced from web crawling popular fan wikis. End-users are able to query the databse and find out more about the marvel franchise. 
 
-This bot is a current work in progress and has not yet been published.
+Many users discover the bot through community websites dedicated to sharing and discovering bots.
+[https://top.gg/bot/879788443457159178](Community Access Link)
