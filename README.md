@@ -2,4 +2,4 @@ Chatbot for popular community-based instant messaging and VoIP application, Disc
 Bot draws from a database of > 5,000 quotes sourced from web crawling popular fan wikis. End-users are able to query the databse and find out more about the marvel franchise. 
 
 Many users discover the bot through community websites dedicated to sharing and discovering bots.
-[https://top.gg/bot/879788443457159178](Community Access Link)
+[Community access link](https://top.gg/bot/879788443457159178)
